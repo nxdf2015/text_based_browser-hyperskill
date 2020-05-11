@@ -4,25 +4,27 @@ from os import mkdir
 from re import search,compile
 from pathlib import Path
 from operator import attrgetter
+import requests
+
 nytimes_com = '''
 This New Liquid Is Magnetic, and Mesmerizing
-
+ 
 Scientists have created “soft” magnets that can flow 
 and change shape, and that could be a boon to medicine 
 and robotics. (Source: New York Times)
-
-
+ 
+ 
 Most Wikipedia Profiles Are of Men. This Scientist Is Changing That.
-
+ 
 Jessica Wade has added nearly 700 Wikipedia biographies for
  important female and minority scientists in less than two 
  years.
-
+ 
 '''
 
 bloomberg_com = '''
 The Space Race: From Apollo 11 to Elon Musk
-
+ 
 It's 50 years since the world was gripped by historic images
  of Apollo 11, and Neil Armstrong -- the first man to walk 
  on the moon. It was the height of the Cold War, and the charts
@@ -30,14 +32,15 @@ It's 50 years since the world was gripped by historic images
  Bad Moon Rising. The world is a very different place than 
  it was 5 decades ago. But how has the space race changed since
  the summer of '69? (Source: Bloomberg)
-
-
+ 
+ 
 Twitter CEO Jack Dorsey Gives Talk at Apple Headquarters
-
+ 
 Twitter and Square Chief Executive Officer Jack Dorsey 
  addressed Apple Inc. employees at the iPhone maker’s headquarters
  Tuesday, a signal of the strong ties between the Silicon Valley giants.
 '''
+
 class InvalidPageException(Exception):
     pass
 
@@ -57,56 +60,75 @@ class History:
 
 
 class Pages:
+    url_pattern=r"https?://[^.]+\.[^.]+\.[^.](/.*)?"
     available=["bloomberg","nytimes"]
-
     def __init__(self,path):
-
         self.path=path
 
     @staticmethod
     def is_valid_url(path):
+        # return search(Pages.url_pattern,path)
         return not path.find(".") == -1
 
     @staticmethod
     def  name_from_url(url):
+        """
+        extract name from url
+        """
         id = url.find(".")
         return url[:id]
 
     def available(self):
+        """
+        available pages are save in folder './path'
+        return list of available page
+        """
         folder=Path(self.path)
         return list(map(attrgetter("name"), folder.iterdir()))
 
     def get(self,page):
-         print("pages",page)
+         """
+            return a a string or error
+         """
          if self.is_available(page):
              name_file= f"{self.path}/{page}"
              with open(name_file,"r") as file:
                  data=file.read()
                  return data,page
+
          elif not Pages.is_valid_url(page):
                 raise InvalidPageException()
          else:
              name_page=Pages.name_from_url(page)
-             data= self.request_page(name_page)
+             data= self.request_page(page)
              if   data=="error":
                  raise InvalidPageException()
-
              name_file= f"{self.path}/{name_page}"
              with open(name_file,"w") as file:
                     file.write(data)
                     return data,name_page
 
 
-
-
     def request_page(self,page):
-        data=""
-        if page == "bloomberg":
-            data = bloomberg_com
-        elif page == "nytimes":
-            data = nytimes_com
+        """
+        get page from an url or  by name
+        for url append https:// if prefix is not at the begining
+        """
+
+        # data=""
+        # if page == "bloomberg":
+        #      data = bloomberg_com
+        # elif page == "nytimes":
+        #      data = nytimes_com
+        #
+        # else:
+        if not page.startswith("https://"):
+                page = "https://" + page
+        response=requests.get(page)
+        if response.status_code == 200:
+                data= response.content.decode()
         else:
-            data="error"
+                data= "error"
         return data
 
     def is_available(self,page):
@@ -116,8 +138,13 @@ class Pages:
 
 
 class Browser:
+    """
+    method start : launch the brower and wait command
+        exit quit browser
+        back show previous page
+        to get a page type url with pattern aaaa.aaaa
 
-
+    """
     def __init__(self,directory=""):
         self.pages=Pages(directory)
         self.history=History()
@@ -146,4 +173,3 @@ if __name__=="__main__":
 
     browser=Browser(path)
     browser.start()
-
