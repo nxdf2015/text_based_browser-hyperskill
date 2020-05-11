@@ -138,7 +138,7 @@ class Browser:
                 print("error")
 
 
-        
+
 if __name__=="__main__":
     path=argv[1]
     if not Path(path).is_dir():
