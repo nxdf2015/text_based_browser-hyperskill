@@ -138,71 +138,7 @@ class Browser:
                 print("error")
 
 
-            
-
-
-
-
-
-# def show_page(choice,path):
-#     name_file=f"{path}/{choice}"
-#     with open(name_file,"r") as f:
-#                 return f.read()
-#
-#
-# def app(path):
-#     pages=[]
-#     history=[]
-#     current=""
-#     while True:
-#         data=""
-#         choice=input()
-#
-#         if choice=="exit":
-#             break
-#         elif choice=="back" and history:
-#                 name=history.pop()
-#                 data=show_page(name,path)
-#                 current=name
-#         elif choice in pages:
-#             if current:
-#                 history.append(current)
-#             current=choice
-#
-#             data=show_page(choice,path)
-#
-#         elif  choice.find(".") == -1:
-#             print("error: incorrect url")
-#         else:
-#             id = choice.find(".")
-#             name=choice[:id]
-#             if not name in ["bloomberg","nytimes"]:
-#                 print("error")
-#             else:
-#
-#                 data=getData(name)
-#                 if current:
-#                     history.append(current)
-#                 current=name
-#                 name_file=f"{path}/{name}"
-#                 with open(name_file,"w") as f:
-#                     f.write(data)
-#                     pages.append(name)
-#
-#         if data:
-#             print(data)
-#
-#
-#
-# def getData(name):
-#     data=""
-#     if name == "bloomberg":
-#         data = bloomberg_com
-#     elif name == "nytimes":
-#         data = nytimes_com
-#     return data
-#
-
+        
 if __name__=="__main__":
     path=argv[1]
     if not Path(path).is_dir():
