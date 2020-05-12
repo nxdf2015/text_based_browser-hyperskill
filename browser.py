@@ -102,8 +102,6 @@ class Parser:
     def __parser(self,root):
         """
         traverse the tree
-            base case: if tag is string return if not empty
-            append  a new line to the response  if tag is block element
         """
         response=""
         for tag in root.contents:
