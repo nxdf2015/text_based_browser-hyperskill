@@ -56,7 +56,7 @@ class Parser:
         """
         return true if tag is not empty and not content of a script tag
         """
-        not_empty = not (match(r"\s+",tag) or tag == "\n")
+        not_empty = not (match(r"\s+",tag.string) or tag.string == "\n")
         return not tag.parent.name in ["script"] and not_empty
 
     def __parser(self,root):
@@ -68,7 +68,7 @@ class Parser:
         response=""
         for tag in root.contents:
             if isinstance(tag,NavigableString):
-                if self.__is_valid_tag(tag) and not match(r"\s+",tag.string):
+                if self.__is_valid_tag(tag):
                     response += tag.string
 
             elif self.__isblock(tag):
