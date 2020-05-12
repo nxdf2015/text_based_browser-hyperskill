@@ -6,6 +6,43 @@ from pathlib import Path
 from operator import attrgetter
 import requests
 from bs4 import BeautifulSoup,NavigableString
+import  colorama
+
+"""
+start application :  python browser.py [directory: required]  
+         directory folder where pages are saved
+
+class Browser  
+    start launch cli 
+      cli command : 
+           exit
+          [link]  if link valid url load print and save the page 
+    
+class Pages
+    get and save the page
+    method:
+        get 
+        
+class History
+    save current and previous page
+    
+    method:
+        update_current
+        back
+
+class Parser
+    transform html string, return a string without html tags
+    constructor:
+        Parser(html_string: string)
+    method:
+        to_string
+        
+class Renderer
+    configure use of colorama 
+    class use by Browser to render data
+    
+"""
+
 
 nytimes_com = '''
 This New Liquid Is Magnetic, and Mesmerizing
@@ -49,6 +86,7 @@ class Parser:
     def __init__(self,html_string):
         self.soup=BeautifulSoup(html_string,"html.parser")
 
+
     def __isblock(self,tag):
         return tag.name in ["li","p","ul","ol"] or tag.name.startswith("h")
 
@@ -59,6 +97,8 @@ class Parser:
         not_empty = not (match(r"\s+",tag.string) or tag.string == "\n")
         return not tag.parent.name in ["script"] and not_empty
 
+    def is_anchor(self,tag):
+        return tag.name == "a"
     def __parser(self,root):
         """
         traverse the tree
@@ -73,10 +113,13 @@ class Parser:
 
             elif self.__isblock(tag):
                 response += "\n" + self.__parser(tag)
+            elif self.is_anchor(tag):
+                response += colorama.Fore.BLUE +  self.__parser(tag) +colorama.Style.RESET_ALL
             else:
                 response += self.__parser(tag)
 
         return response
+
 
     def to_string(self):
         """
@@ -178,6 +221,20 @@ class Pages:
         return page in self.available()
 
 
+class Renderer:
+    """
+    configure use module colorama
+    """
+    def __enter__(self):
+        colorama.init()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        colorama.deinit()
+
+    def print(self,data):
+        print(data)
+
 
 
 class Browser:
@@ -193,19 +250,19 @@ class Browser:
         self.history=History()
 
     def start(self):
-
-        while True:
-            choice=input()
-            if choice=="exit":
-                break
-            elif choice=="back":
-                choice=self.history.back()
-            try:
-                data,name=self.pages.get(choice)
-                self.history.update_current(name)
-                print(data)
-            except InvalidPageException :
-                print("error")
+        with Renderer() as render:
+            while True:
+                choice=input()
+                if choice=="exit":
+                    break
+                elif choice=="back":
+                    choice=self.history.back()
+                try:
+                    data,name=self.pages.get(choice)
+                    self.history.update_current(name)
+                    render.print(data)
+                except InvalidPageException :
+                    print("error")
 
 
 
