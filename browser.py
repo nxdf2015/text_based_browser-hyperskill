@@ -1,10 +1,11 @@
 
 from sys import argv
 from os import mkdir
-from re import search,compile
+from re import search,compile,match
 from pathlib import Path
 from operator import attrgetter
 import requests
+from bs4 import BeautifulSoup,NavigableString
 
 nytimes_com = '''
 This New Liquid Is Magnetic, and Mesmerizing
@@ -43,6 +44,46 @@ Twitter and Square Chief Executive Officer Jack Dorsey
 
 class InvalidPageException(Exception):
     pass
+
+class Parser:
+    def __init__(self,html_string):
+        self.soup=BeautifulSoup(html_string,"html.parser")
+
+    def __isblock(self,tag):
+        return tag.name in ["li","p","ul","ol"] or tag.name.startswith("h")
+
+    def __is_valid_tag(self,tag):
+        """
+        return true if tag is not empty and not content of a script tag
+        """
+        not_empty = not (match(r"\s+",tag) or tag == "\n")
+        return not tag.parent.name in ["script"] and not_empty
+
+    def __parser(self,root):
+        """
+        traverse the tree
+            base case: if tag is string return if not empty
+            append  a new line to the response  if tag is block element
+        """
+        response=""
+        for tag in root.contents:
+            if isinstance(tag,NavigableString):
+                if self.__is_valid_tag(tag) and not match(r"\s+",tag.string):
+                    response += tag.string
+
+            elif self.__isblock(tag):
+                response += "\n" + self.__parser(tag)
+            else:
+                response += self.__parser(tag)
+
+        return response
+
+    def to_string(self):
+        """
+        return html without tag
+        """
+        return self.__parser(self.soup.body)
+
 
 class History:
     def __init__(self):
@@ -105,10 +146,12 @@ class Pages:
                  raise InvalidPageException()
              name_file= f"{self.path}/{name_page}"
              with open(name_file,"w") as file:
-                    file.write(data)
-                    return data,name_page
+                    parser=Parser(data)
+                    data_string=parser.to_string()
+                    file.write(data_string)
+                    return data_string,name_page
 
-
+    
     def request_page(self,page):
         """
         get page from an url or  by name
@@ -126,7 +169,7 @@ class Pages:
                 page = "https://" + page
         response=requests.get(page)
         if response.status_code == 200:
-                data= response.content.decode()
+                data= response.content
         else:
                 data= "error"
         return data
@@ -167,9 +210,11 @@ class Browser:
 
 
 if __name__=="__main__":
+
     path=argv[1]
     if not Path(path).is_dir():
         mkdir(path)
 
     browser=Browser(path)
     browser.start()
+
